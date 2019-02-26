@@ -20,7 +20,7 @@ size_t Semaphore::get_passing_limit() const
 void Semaphore::wait()
 {
     std::unique_lock<std::mutex> ul(mtx);
-    const size_t my_ticket = next_ticket;
+    size_t my_ticket = next_ticket;
     next_ticket++;
     cond_vars.push(std::make_unique<std::condition_variable>());
     cond_vars.back()->wait(ul, [=]
