@@ -21,15 +21,15 @@ void Semaphore::wait()
 {
     std::unique_lock<std::mutex> ul(mtx);
     size_t my_ticket = next_ticket;
-    next_ticket++;
+    ++next_ticket;
     cond_vars.push(std::make_unique<std::condition_variable>());
     cond_vars.back()->wait(ul, [=]
     {
         return my_ticket == now_serving && passing_cnt < passing_limit;
     });
     cond_vars.pop();
-    passing_cnt++;
-    now_serving++;
+    ++passing_cnt;
+    ++now_serving;
     if (!cond_vars.empty())
         cond_vars.front()->notify_one();
 }
