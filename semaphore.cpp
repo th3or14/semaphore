@@ -37,7 +37,7 @@ void Semaphore::wait()
 void Semaphore::signal()
 {
     std::unique_lock<std::mutex> ul(mtx);
-    passing_cnt--;
+    --passing_cnt;
     if (!cond_vars.empty())
         cond_vars.front()->notify_one();
 }
