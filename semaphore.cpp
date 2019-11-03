@@ -30,14 +30,14 @@ void Semaphore::wait()
     cond_vars.pop();
     ++passing_cnt;
     ++now_serving;
-    if (!cond_vars.empty())
-        cond_vars.front()->notify_one();
+    cond_vars.front()->notify_one();
 }
 
 void Semaphore::signal()
 {
     std::unique_lock<std::mutex> ul(mtx);
+    if (passing_cnt == 0)
+        throw std::logic_error("nothing to signal");
     --passing_cnt;
-    if (!cond_vars.empty())
-        cond_vars.front()->notify_one();
+    cond_vars.front()->notify_one();
 }
