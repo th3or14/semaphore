@@ -30,7 +30,8 @@ void Semaphore::wait()
     cond_vars.pop();
     ++passing_cnt;
     ++now_serving;
-    cond_vars.front()->notify_one();
+    if (!cond_vars.empty())
+        cond_vars.front()->notify_one();
 }
 
 void Semaphore::signal()
@@ -39,5 +40,6 @@ void Semaphore::signal()
     if (passing_cnt == 0)
         throw std::logic_error("nothing to signal");
     --passing_cnt;
-    cond_vars.front()->notify_one();
+    if (!cond_vars.empty())
+        cond_vars.front()->notify_one();
 }
