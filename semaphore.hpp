@@ -8,8 +8,7 @@ class Semaphore
 {
 public:
     explicit Semaphore(size_t passing_limit = 1);
-    void set_passing_limit(size_t limit);
-    size_t get_passing_limit() const;
+    void adjust_passing_limit(size_t limit);
     void wait();
     void signal();
 

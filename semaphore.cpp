@@ -3,18 +3,12 @@
 Semaphore::Semaphore(size_t passing_limit) : now_serving(0), next_ticket(0), passing_cnt(0),
     passing_limit(passing_limit) {}
 
-void Semaphore::set_passing_limit(size_t limit)
+void Semaphore::adjust_passing_limit(size_t limit)
 {
     std::unique_lock<std::mutex> ul(mtx);
     passing_limit = limit;
     if (!cond_vars.empty())
         cond_vars.front()->notify_one();
-}
-
-size_t Semaphore::get_passing_limit() const
-{
-    std::unique_lock<std::mutex> ul(mtx);
-    return passing_limit;
 }
 
 void Semaphore::wait()
