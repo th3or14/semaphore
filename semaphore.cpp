@@ -17,7 +17,7 @@ void Semaphore::wait()
     size_t my_ticket = next_ticket;
     ++next_ticket;
     cond_vars.push(std::make_unique<std::condition_variable>());
-    cond_vars.back()->wait(ul, [=]
+    cond_vars.back()->wait(ul, [=]() -> bool
     {
         return my_ticket == now_serving && passing_cnt < passing_limit;
     });
