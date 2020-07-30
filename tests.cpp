@@ -86,8 +86,10 @@ void Semaphore2::signal()
     cond_var.notify_all();
 }
 
+} // namespace
+
 template <typename T>
-std::chrono::milliseconds run_performance_benchmark(int threads_cnt)
+static std::chrono::milliseconds run_performance_benchmark(int threads_cnt)
 {
     auto t1 = std::chrono::high_resolution_clock::now();
     SemaphoreInterface<T> semaphore(0);
@@ -106,8 +108,6 @@ std::chrono::milliseconds run_performance_benchmark(int threads_cnt)
     auto t2 = std::chrono::high_resolution_clock::now();
     return std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
 }
-
-} // namespace
 
 bool run_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between_threads_creation)
 {
