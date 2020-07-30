@@ -15,6 +15,46 @@ private:
     T impl;
 };
 
+class Semaphore2
+{
+public:
+    explicit Semaphore2(size_t passing_limit = 1);
+    void adjust_passing_limit(size_t limit);
+    void wait();
+    void signal();
+
+private:
+    size_t now_serving;
+    size_t next_ticket;
+    size_t passing_cnt;
+    size_t passing_limit;
+    std::condition_variable cond_var;
+    mutable std::mutex mtx;
+};
+
+} // namespace
+
+template <typename T>
+static std::chrono::milliseconds run_performance_benchmark(int threads_cnt)
+{
+    auto t1 = std::chrono::high_resolution_clock::now();
+    SemaphoreInterface<T> semaphore(0);
+    std::vector<std::thread> threads;
+    for (int i = 0; i < threads_cnt; ++i)
+    {
+        threads.push_back(std::thread([&semaphore]
+        {
+            semaphore.wait();
+            semaphore.signal();
+        }));
+    }
+    semaphore.adjust_passing_limit(1);
+    for (auto &t : threads)
+        t.join();
+    auto t2 = std::chrono::high_resolution_clock::now();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+}
+
 template <typename T>
 SemaphoreInterface<T>::SemaphoreInterface(size_t passing_limit) : impl(passing_limit) {}
 
@@ -35,23 +75,6 @@ void SemaphoreInterface<T>::signal()
 {
     impl.signal();
 }
-
-class Semaphore2
-{
-public:
-    explicit Semaphore2(size_t passing_limit = 1);
-    void adjust_passing_limit(size_t limit);
-    void wait();
-    void signal();
-
-private:
-    size_t now_serving;
-    size_t next_ticket;
-    size_t passing_cnt;
-    size_t passing_limit;
-    std::condition_variable cond_var;
-    mutable std::mutex mtx;
-};
 
 Semaphore2::Semaphore2(size_t passing_limit) : now_serving(0), next_ticket(0), passing_cnt(0),
     passing_limit(passing_limit) {}
@@ -84,29 +107,6 @@ void Semaphore2::signal()
         throw std::logic_error("nothing to signal");
     --passing_cnt;
     cond_var.notify_all();
-}
-
-} // namespace
-
-template <typename T>
-static std::chrono::milliseconds run_performance_benchmark(int threads_cnt)
-{
-    auto t1 = std::chrono::high_resolution_clock::now();
-    SemaphoreInterface<T> semaphore(0);
-    std::vector<std::thread> threads;
-    for (int i = 0; i < threads_cnt; ++i)
-    {
-        threads.push_back(std::thread([&semaphore]
-        {
-            semaphore.wait();
-            semaphore.signal();
-        }));
-    }
-    semaphore.adjust_passing_limit(1);
-    for (auto &t : threads)
-        t.join();
-    auto t2 = std::chrono::high_resolution_clock::now();
-    return std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
 }
 
 bool run_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between_threads_creation)
