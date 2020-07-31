@@ -11,3 +11,7 @@
 * CMake
 
 * A C++14 compliant compiler
+
+## Building
+
+Use `CMakeLists.txt`.
