@@ -1,3 +1,6 @@
+#ifndef TESTS_HPP
+#define TESTS_HPP
+
 #include "semaphore.hpp"
 
 #include <iostream>
@@ -10,3 +13,5 @@ bool run_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between
 std::chrono::milliseconds run_proposed_impl_performance_benchmark(int threads_cnt);
 
 std::chrono::milliseconds run_alternative_impl_performance_benchmark(int threads_cnt);
+
+#endif // TESTS_HPP
