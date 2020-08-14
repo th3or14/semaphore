@@ -16,5 +16,5 @@ int main()
     std::cout << "alternative semaphore benchmark (single condition variable is used): " <<
                  run_alternative_impl_performance_benchmark(
                      performance_benchmark_threads_cnt).count() << "ms\n";
-    return 0;
+    return EXIT_SUCCESS;
 }
