@@ -18,7 +18,7 @@ private:
     size_t passing_cnt;
     size_t passing_limit;
     std::queue<std::unique_ptr<std::condition_variable>> cond_vars;
-    mutable std::mutex mtx;
+    std::mutex mtx;
 };
 
 #endif // SEMAPHORE_HPP
