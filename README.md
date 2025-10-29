@@ -8,7 +8,7 @@
 
 ## Requirements
 
-* CMake
+* CMake 3.7+
 
 * A C++14 compliant compiler
 
