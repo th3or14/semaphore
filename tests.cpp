@@ -15,10 +15,10 @@ private:
     T impl;
 };
 
-class Semaphore2
+class AlternativeSemaphore
 {
 public:
-    explicit Semaphore2(size_t passing_limit = 1);
+    explicit AlternativeSemaphore(size_t passing_limit = 1);
     void adjust_passing_limit(size_t limit);
     void wait();
     void signal();
@@ -32,7 +32,48 @@ private:
     mutable std::mutex mtx;
 };
 
+class UnfairSemaphore
+{
+public:
+    explicit UnfairSemaphore(size_t passing_limit = 1);
+    void adjust_passing_limit(size_t limit);
+    void wait();
+    void signal();
+
+private:
+    size_t passing_cnt;
+    size_t passing_limit;
+    std::condition_variable cond_var;
+    mutable std::mutex mtx;
+};
+
 } // namespace
+
+template <typename T>
+static bool run_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between_threads_creation)
+{
+    SemaphoreInterface<T> semaphore(0);
+    std::vector<std::thread> threads;
+    std::vector<size_t> passing_order;
+    for (int i = 0; i < threads_cnt; ++i)
+    {
+        if (i > 0)
+            std::this_thread::sleep_for(delay_between_threads_creation);
+        threads.push_back(std::thread([&semaphore, &passing_order, i]
+        {
+            semaphore.wait();
+            passing_order.push_back(i);
+            semaphore.signal();
+        }));
+    }
+    semaphore.adjust_passing_limit(1);
+    for (auto &t : threads)
+        t.join();
+    for (size_t i = 0; i < passing_order.size(); ++i)
+        if (passing_order.at(i) != i)
+            return false;
+    return true;
+}
 
 template <typename T>
 static std::chrono::milliseconds run_performance_benchmark(int threads_cnt)
@@ -76,17 +117,17 @@ void SemaphoreInterface<T>::signal()
     impl.signal();
 }
 
-Semaphore2::Semaphore2(size_t passing_limit) : now_serving(0), next_ticket(0), passing_cnt(0),
+AlternativeSemaphore::AlternativeSemaphore(size_t passing_limit) : now_serving(0), next_ticket(0), passing_cnt(0),
     passing_limit(passing_limit) {}
 
-void Semaphore2::adjust_passing_limit(size_t limit)
+void AlternativeSemaphore::adjust_passing_limit(size_t limit)
 {
     std::unique_lock<std::mutex> ul(mtx);
     passing_limit = limit;
     cond_var.notify_all();
 }
 
-void Semaphore2::wait()
+void AlternativeSemaphore::wait()
 {
     std::unique_lock<std::mutex> ul(mtx);
     size_t my_ticket = next_ticket;
@@ -100,7 +141,7 @@ void Semaphore2::wait()
     cond_var.notify_all();
 }
 
-void Semaphore2::signal()
+void AlternativeSemaphore::signal()
 {
     std::unique_lock<std::mutex> ul(mtx);
     if (passing_cnt == 0)
@@ -109,29 +150,49 @@ void Semaphore2::signal()
     cond_var.notify_all();
 }
 
-bool run_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between_threads_creation)
+UnfairSemaphore::UnfairSemaphore(size_t passing_limit) : passing_cnt(0),
+    passing_limit(passing_limit) {}
+
+void UnfairSemaphore::adjust_passing_limit(size_t limit)
 {
-    Semaphore semaphore(0);
-    std::vector<std::thread> threads;
-    std::vector<size_t> passing_order;
-    for (int i = 0; i < threads_cnt; ++i)
+    std::unique_lock<std::mutex> ul(mtx);
+    passing_limit = limit;
+    cond_var.notify_all();
+}
+
+void UnfairSemaphore::wait()
+{
+    std::unique_lock<std::mutex> ul(mtx);
+    cond_var.wait(ul, [=]() -> bool
     {
-        if (i > 0)
-            std::this_thread::sleep_for(delay_between_threads_creation);
-        threads.push_back(std::thread([&semaphore, &passing_order, i]
-        {
-            semaphore.wait();
-            passing_order.push_back(i);
-            semaphore.signal();
-        }));
-    }
-    semaphore.adjust_passing_limit(1);
-    for (auto &t : threads)
-        t.join();
-    for (size_t i = 0; i < passing_order.size(); ++i)
-        if (passing_order.at(i) != i)
-            return false;
-    return true;
+        return passing_cnt < passing_limit;
+    });
+    ++passing_cnt;
+    cond_var.notify_all();
+}
+
+void UnfairSemaphore::signal()
+{
+    std::unique_lock<std::mutex> ul(mtx);
+    if (passing_cnt == 0)
+        throw std::logic_error("nothing to signal");
+    --passing_cnt;
+    cond_var.notify_all();
+}
+
+bool run_proposed_impl_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between_threads_creation)
+{
+    return run_fairness_check<Semaphore>(threads_cnt, delay_between_threads_creation);
+}
+
+bool run_alternative_impl_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between_threads_creation)
+{
+    return run_fairness_check<AlternativeSemaphore>(threads_cnt, delay_between_threads_creation);
+}
+
+bool run_unfair_impl_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between_threads_creation)
+{
+    return run_fairness_check<UnfairSemaphore>(threads_cnt, delay_between_threads_creation);
 }
 
 std::chrono::milliseconds run_proposed_impl_performance_benchmark(int threads_cnt)
@@ -141,5 +202,10 @@ std::chrono::milliseconds run_proposed_impl_performance_benchmark(int threads_cn
 
 std::chrono::milliseconds run_alternative_impl_performance_benchmark(int threads_cnt)
 {
-    return run_performance_benchmark<Semaphore2>(threads_cnt);
+    return run_performance_benchmark<AlternativeSemaphore>(threads_cnt);
+}
+
+std::chrono::milliseconds run_unfair_impl_performance_benchmark(int threads_cnt)
+{
+    return run_performance_benchmark<UnfairSemaphore>(threads_cnt);
 }
