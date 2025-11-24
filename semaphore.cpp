@@ -6,8 +6,9 @@ Semaphore::Semaphore(size_t passing_limit) : now_serving(0), next_ticket(0), pas
 void Semaphore::adjust_passing_limit(size_t limit)
 {
     std::unique_lock<std::mutex> ul(mtx);
+    bool is_new_limit_greater = limit > passing_limit;
     passing_limit = limit;
-    if (!cond_vars.empty())
+    if (is_new_limit_greater && !cond_vars.empty())
         cond_vars.front()->notify_one();
 }
 

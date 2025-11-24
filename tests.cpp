@@ -123,8 +123,10 @@ AlternativeSemaphore::AlternativeSemaphore(size_t passing_limit) : now_serving(0
 void AlternativeSemaphore::adjust_passing_limit(size_t limit)
 {
     std::unique_lock<std::mutex> ul(mtx);
+    bool is_new_limit_greater = limit > passing_limit;
     passing_limit = limit;
-    cond_var.notify_all();
+    if (is_new_limit_greater)
+        cond_var.notify_all();
 }
 
 void AlternativeSemaphore::wait()
@@ -156,8 +158,10 @@ UnfairSemaphore::UnfairSemaphore(size_t passing_limit) : passing_cnt(0),
 void UnfairSemaphore::adjust_passing_limit(size_t limit)
 {
     std::unique_lock<std::mutex> ul(mtx);
+    bool is_new_limit_greater = limit > passing_limit;
     passing_limit = limit;
-    cond_var.notify_all();
+    if (is_new_limit_greater)
+        cond_var.notify_all();
 }
 
 void UnfairSemaphore::wait()
