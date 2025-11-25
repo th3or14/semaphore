@@ -140,7 +140,6 @@ void AlternativeSemaphore::wait()
     });
     ++passing_cnt;
     ++now_serving;
-    cond_var.notify_all();
 }
 
 void AlternativeSemaphore::signal()
@@ -172,7 +171,6 @@ void UnfairSemaphore::wait()
         return passing_cnt < passing_limit;
     });
     ++passing_cnt;
-    cond_var.notify_one();
 }
 
 void UnfairSemaphore::signal()

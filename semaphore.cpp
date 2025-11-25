@@ -25,8 +25,6 @@ void Semaphore::wait()
     cond_vars.pop();
     ++passing_cnt;
     ++now_serving;
-    if (!cond_vars.empty())
-        cond_vars.front()->notify_one();
 }
 
 void Semaphore::signal()
