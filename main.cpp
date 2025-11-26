@@ -24,7 +24,7 @@ int main()
     std::cout << "unfair semaphore (no ticket lock algorithm) tests:\n";
     std::cout << (run_unfair_impl_fairness_check(fairness_check_threads_cnt, delay_between_threads_creation) ?
                       "\t1) fairness check passed\n" :
-                      "\t1) fairness check failed (expectedly)\n");
+                      "\t1) fairness check failed (expectedly for unfair semaphore)\n");
     std::cout << "\t2) benchmark took " <<
                  run_unfair_impl_performance_benchmark(
                      performance_benchmark_threads_cnt).count() << "ms\n";
