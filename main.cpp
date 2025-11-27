@@ -35,6 +35,7 @@ int main()
     else
     {
         std::cout << "\t1) fairness check failed (expectedly for unfair semaphore)\n";
+        return EXIT_FAILURE;
     }
     std::cout << "\t2) benchmark took " <<
                  run_unfair_impl_performance_benchmark(
