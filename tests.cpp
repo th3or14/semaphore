@@ -57,14 +57,13 @@ static bool run_fairness_check(int threads_cnt, std::chrono::milliseconds delay_
     std::vector<size_t> passing_order;
     for (int i = 0; i < threads_cnt; ++i)
     {
-        if (i > 0)
-            std::this_thread::sleep_for(delay_between_threads_creation);
         threads.push_back(std::thread([&semaphore, &passing_order, i]
         {
             semaphore.wait();
             passing_order.push_back(i);
             semaphore.signal();
         }));
+        std::this_thread::sleep_for(delay_between_threads_creation);
     }
     semaphore.adjust_passing_limit(1);
     for (auto &t : threads)
