@@ -14,6 +14,6 @@
 
 * A C++14 compliant compiler
 
-## Building
+## Building and Testing
 
-Use `CMakeLists.txt`.
+Use `CMakeLists.txt`. You may refer to `.github/workflows/cmake-multi-platform.yml` as an example.
