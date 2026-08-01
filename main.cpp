@@ -7,8 +7,9 @@ int main()
     static const std::chrono::milliseconds delay_between_threads_creation = 100ms;
     static const int fairness_check_threads_cnt = 10;
     static const int performance_benchmark_threads_cnt = 1000;
-    std::cout << "proposed semaphore (ticket lock algorithm, queue of condition variables) tests:\n";
-    if (run_proposed_impl_fairness_check(fairness_check_threads_cnt, delay_between_threads_creation))
+    std::cout << "proposed semaphore implementation tests:\n";
+    if (run_proposed_impl_fairness_check(fairness_check_threads_cnt,
+                                         delay_between_threads_creation))
         std::cout << "\t1) fairness check passed\n";
     else
     {
@@ -18,8 +19,9 @@ int main()
     std::cout << "\t2) benchmark took " <<
                  run_proposed_impl_performance_benchmark(
                      performance_benchmark_threads_cnt).count() << "ms\n";
-    std::cout << "alternative semaphore (ticket lock algorithm, single condition variable) tests:\n";
-    if (run_alternative_impl_fairness_check(fairness_check_threads_cnt, delay_between_threads_creation))
+    std::cout << "alternative semaphore implementation tests:\n";
+    if (run_alternative_impl_fairness_check(fairness_check_threads_cnt,
+                                            delay_between_threads_creation))
         std::cout << "\t1) fairness check passed\n";
     else
     {
@@ -29,10 +31,11 @@ int main()
     std::cout << "\t2) benchmark took " <<
                  run_alternative_impl_performance_benchmark(
                      performance_benchmark_threads_cnt).count() << "ms\n";
-    std::cout << "unfair semaphore (no ticket lock algorithm) tests:\n";
-    if (run_unfair_impl_fairness_check(fairness_check_threads_cnt, delay_between_threads_creation))
+    std::cout << "unfair semaphore implementation tests:\n";
+    if (run_unfair_impl_fairness_check(fairness_check_threads_cnt,
+                                       delay_between_threads_creation))
     {
-        std::cout << "\t1) fairness check passed (may happen depending on circumstances like platform or by accident)\n";
+        std::cout << "\t1) fairness check passed (may happen by accident, worth retrying)\n";
         return EXIT_FAILURE;
     }
     else
