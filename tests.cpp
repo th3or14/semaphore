@@ -159,7 +159,7 @@ void UnfairSemaphore::adjust_passing_limit(size_t limit)
     bool is_new_limit_greater = limit > passing_limit;
     passing_limit = limit;
     if (is_new_limit_greater)
-        cond_var.notify_one();
+        cond_var.notify_all();
 }
 
 void UnfairSemaphore::wait()
@@ -178,7 +178,7 @@ void UnfairSemaphore::signal()
     if (passing_cnt == 0)
         throw std::logic_error("nothing to signal");
     --passing_cnt;
-    cond_var.notify_one();
+    cond_var.notify_all();
 }
 
 bool run_proposed_impl_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between_threads_creation)
