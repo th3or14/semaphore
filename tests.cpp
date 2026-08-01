@@ -1,4 +1,7 @@
 #include "tests.hpp"
+#include "semaphore.hpp"
+
+#include <thread>
 
 namespace {
 

@@ -1,5 +1,9 @@
 #include "tests.hpp"
 
+#include <iostream>
+
+using namespace std::chrono_literals;
+
 int main()
 {
     // if this delay is not sufficient, then some newer thread may acuqire a semaphore before
