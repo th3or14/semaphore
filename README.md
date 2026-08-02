@@ -2,7 +2,7 @@
 
 ## Subject
 
-The proposed semaphore implementation is in the files `semaphore.hpp` and `semaphore.cpp`.
+The proposed semaphore implementation is the class `Semaphore` defined in the files `semaphore.hpp` and `semaphore.cpp`.
 
 ## Features
 
