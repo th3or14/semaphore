@@ -20,7 +20,7 @@ void Semaphore::wait()
     cond_vars.push(std::make_unique<std::condition_variable>());
     cond_vars.back()->wait(ul, [=]() -> bool
     {
-        // despite of condition variables are notified one by one in the right order in the queue,
+        // in spite of condition variables are notified one by one in the right order in the queue,
         // this predicate is still needed for protecting from spurious wakeups
         return (my_ticket == now_serving) && (passing_cnt < passing_limit);
     });
