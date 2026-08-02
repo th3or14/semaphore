@@ -20,7 +20,7 @@ int main()
         std::cout << "\t1) fairness check failed\n";
         return EXIT_FAILURE;
     }
-    std::cout << "\t2) benchmark took " <<
+    std::cout << "\t2) performance benchmark took " <<
                  run_proposed_impl_performance_benchmark(
                      performance_benchmark_threads_cnt).count() << "ms\n";
     std::cout << "alternative semaphore implementation tests:\n";
@@ -32,7 +32,7 @@ int main()
         std::cout << "\t1) fairness check failed\n";
         return EXIT_FAILURE;
     }
-    std::cout << "\t2) benchmark took " <<
+    std::cout << "\t2) performance benchmark took " <<
                  run_alternative_impl_performance_benchmark(
                      performance_benchmark_threads_cnt).count() << "ms\n";
     std::cout << "unfair semaphore implementation tests:\n";
@@ -44,7 +44,7 @@ int main()
     }
     else
         std::cout << "\t1) fairness check failed (expectedly for unfair semaphore)\n";
-    std::cout << "\t2) benchmark took " <<
+    std::cout << "\t2) performance benchmark took " <<
                  run_unfair_impl_performance_benchmark(
                      performance_benchmark_threads_cnt).count() << "ms\n";
     return EXIT_SUCCESS;
