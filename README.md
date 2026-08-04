@@ -14,7 +14,7 @@ The proposed semaphore implementation is the class `Semaphore` defined in the fi
 
 ## Requirements
 
-* CMake 3.7+
+* CMake 3.14+
 
 * A C++14 compliant compiler
 

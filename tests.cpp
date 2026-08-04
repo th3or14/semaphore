@@ -1,27 +1,21 @@
-#include "tests.hpp"
 #include "semaphore.hpp"
 
+#include <gtest/gtest.h>
+#include <benchmark/benchmark.h>
+
 #include <thread>
+#include <chrono>
+
+using namespace std::chrono_literals;
+
+using ProposedSemaphore = Semaphore;
 
 namespace {
 
-template <typename T>
-class SemaphoreInterface
+class OneCondVarSemaphore
 {
 public:
-    SemaphoreInterface(size_t passing_limit);
-    void adjust_passing_limit(size_t limit);
-    void wait();
-    void signal();
-
-private:
-    T impl;
-};
-
-class AlternativeSemaphore
-{
-public:
-    explicit AlternativeSemaphore(size_t passing_limit = 1);
+    explicit OneCondVarSemaphore(size_t passing_limit = 1);
     void adjust_passing_limit(size_t limit);
     void wait();
     void signal();
@@ -53,12 +47,13 @@ private:
 } // namespace
 
 template <typename T>
-static bool run_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between_threads_creation)
+static bool run_fairness_check()
 {
-    SemaphoreInterface<T> semaphore(0);
+    T semaphore(0);
     std::vector<std::thread> threads;
     std::vector<size_t> passing_order;
-    for (int i = 0; i < threads_cnt; ++i)
+    static const int fairness_check_threads_cnt = 30;
+    for (int i = 0; i < fairness_check_threads_cnt; ++i)
     {
         threads.push_back(std::thread([&semaphore, &passing_order, i]
         {
@@ -66,6 +61,9 @@ static bool run_fairness_check(int threads_cnt, std::chrono::milliseconds delay_
             passing_order.push_back(i);
             semaphore.signal();
         }));
+        // if this delay is not sufficient, then some newer thread may call semaphore.wait() before
+        // another thread created earlier, which results in a race condition making this check fail
+        static const std::chrono::milliseconds delay_between_threads_creation = 100ms;
         std::this_thread::sleep_for(delay_between_threads_creation);
     }
     semaphore.adjust_passing_limit(1);
@@ -78,51 +76,30 @@ static bool run_fairness_check(int threads_cnt, std::chrono::milliseconds delay_
 }
 
 template <typename T>
-static std::chrono::milliseconds run_performance_benchmark(int threads_cnt)
+static void run_performance_benchmark(benchmark::State& state)
 {
-    auto t1 = std::chrono::high_resolution_clock::now();
-    SemaphoreInterface<T> semaphore(0);
-    std::vector<std::thread> threads;
-    for (int i = 0; i < threads_cnt; ++i)
-    {
-        threads.push_back(std::thread([&semaphore]
+    for (auto _ : state) {
+        T semaphore(0);
+        std::vector<std::thread> threads;
+        static const int performance_benchmark_threads_cnt = 1000;
+        for (int i = 0; i < performance_benchmark_threads_cnt; ++i)
         {
-            semaphore.wait();
-            semaphore.signal();
-        }));
+            threads.push_back(std::thread([&semaphore]
+            {
+                semaphore.wait();
+                semaphore.signal();
+            }));
+        }
+        semaphore.adjust_passing_limit(1);
+        for (auto &t : threads)
+            t.join();
     }
-    semaphore.adjust_passing_limit(1);
-    for (auto &t : threads)
-        t.join();
-    auto t2 = std::chrono::high_resolution_clock::now();
-    return std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
 }
 
-template <typename T>
-SemaphoreInterface<T>::SemaphoreInterface(size_t passing_limit) : impl(passing_limit) {}
+OneCondVarSemaphore::OneCondVarSemaphore(size_t passing_limit) : now_serving(0), next_ticket(0),
+    passing_cnt(0), passing_limit(passing_limit) {}
 
-template <typename T>
-void SemaphoreInterface<T>::adjust_passing_limit(size_t limit)
-{
-    impl.adjust_passing_limit(limit);
-}
-
-template <typename T>
-void SemaphoreInterface<T>::wait()
-{
-    impl.wait();
-}
-
-template <typename T>
-void SemaphoreInterface<T>::signal()
-{
-    impl.signal();
-}
-
-AlternativeSemaphore::AlternativeSemaphore(size_t passing_limit) : now_serving(0), next_ticket(0), passing_cnt(0),
-    passing_limit(passing_limit) {}
-
-void AlternativeSemaphore::adjust_passing_limit(size_t limit)
+void OneCondVarSemaphore::adjust_passing_limit(size_t limit)
 {
     std::unique_lock<std::mutex> ul(mtx);
     bool is_new_limit_greater = limit > passing_limit;
@@ -131,7 +108,7 @@ void AlternativeSemaphore::adjust_passing_limit(size_t limit)
         cond_var.notify_all();
 }
 
-void AlternativeSemaphore::wait()
+void OneCondVarSemaphore::wait()
 {
     std::unique_lock<std::mutex> ul(mtx);
     size_t my_ticket = next_ticket;
@@ -144,7 +121,7 @@ void AlternativeSemaphore::wait()
     ++now_serving;
 }
 
-void AlternativeSemaphore::signal()
+void OneCondVarSemaphore::signal()
 {
     std::unique_lock<std::mutex> ul(mtx);
     if (passing_cnt == 0)
@@ -184,32 +161,26 @@ void UnfairSemaphore::signal()
     cond_var.notify_all();
 }
 
-bool run_proposed_impl_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between_threads_creation)
+TEST(FairnessCheck, PassesForProposedSemaphore)
 {
-    return run_fairness_check<Semaphore>(threads_cnt, delay_between_threads_creation);
+    EXPECT_TRUE(run_fairness_check<ProposedSemaphore>());
 }
 
-bool run_alternative_impl_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between_threads_creation)
+TEST(FairnessCheck, PassesForOneCondVarSemaphore)
 {
-    return run_fairness_check<AlternativeSemaphore>(threads_cnt, delay_between_threads_creation);
+    EXPECT_TRUE(run_fairness_check<OneCondVarSemaphore>());
 }
 
-bool run_unfair_impl_fairness_check(int threads_cnt, std::chrono::milliseconds delay_between_threads_creation)
+TEST(FairnessCheck, FailsForUnfairSemaphore)
 {
-    return run_fairness_check<UnfairSemaphore>(threads_cnt, delay_between_threads_creation);
+    EXPECT_FALSE(run_fairness_check<UnfairSemaphore>());
 }
 
-std::chrono::milliseconds run_proposed_impl_performance_benchmark(int threads_cnt)
-{
-    return run_performance_benchmark<Semaphore>(threads_cnt);
-}
+BENCHMARK(run_performance_benchmark<ProposedSemaphore>);
+BENCHMARK(run_performance_benchmark<OneCondVarSemaphore>);
+BENCHMARK(run_performance_benchmark<UnfairSemaphore>);
 
-std::chrono::milliseconds run_alternative_impl_performance_benchmark(int threads_cnt)
+TEST(PerformanceBenchmark, RunAllRegisteredBenchmarks)
 {
-    return run_performance_benchmark<AlternativeSemaphore>(threads_cnt);
-}
-
-std::chrono::milliseconds run_unfair_impl_performance_benchmark(int threads_cnt)
-{
-    return run_performance_benchmark<UnfairSemaphore>(threads_cnt);
+    benchmark::RunSpecifiedBenchmarks();
 }
