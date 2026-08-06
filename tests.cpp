@@ -18,12 +18,14 @@ public:
     explicit OneCondVarSemaphore(size_t resource_count = 1);
     void wait();
     void signal();
+    size_t get_number_of_waiting_threads() const;
 
 private:
     std::condition_variable cond_var;
-    std::mutex mtx;
+    mutable std::mutex mtx;
     size_t now_serving;
     size_t next_ticket;
+    size_t number_of_waiting_threads;
     size_t resource_count;
 };
 
@@ -33,10 +35,12 @@ public:
     explicit UnfairSemaphore(size_t resource_count = 1);
     void wait();
     void signal();
+    size_t get_number_of_waiting_threads() const;
 
 private:
     std::condition_variable cond_var;
-    std::mutex mtx;
+    mutable std::mutex mtx;
+    size_t number_of_waiting_threads;
     size_t resource_count;
 };
 
@@ -48,8 +52,8 @@ static bool run_fairness_check()
     T semaphore(0);
     std::vector<std::thread> threads;
     std::vector<size_t> passing_order;
-    static const int number_of_threads = 30;
-    for (int i = 0; i < number_of_threads; ++i)
+    static const size_t number_of_threads = 30;
+    for (size_t i = 0; i < number_of_threads; ++i)
     {
         threads.push_back(std::thread([&semaphore, &passing_order, i]
         {
@@ -57,10 +61,8 @@ static bool run_fairness_check()
             passing_order.push_back(i);
             semaphore.signal();
         }));
-        // if this delay is not sufficient, then some newer thread may call semaphore.wait() before
-        // another thread created earlier, which results in a race condition making this check fail
-        static const std::chrono::milliseconds delay_between_threads_creation = 100ms;
-        std::this_thread::sleep_for(delay_between_threads_creation);
+        while (semaphore.get_number_of_waiting_threads() != (i + 1))
+            std::this_thread::yield();
     }
     semaphore.signal();
     for (auto &t : threads)
@@ -74,11 +76,12 @@ static bool run_fairness_check()
 template <typename T>
 static void run_performance_benchmark(benchmark::State& state)
 {
-    for (auto _ : state) {
+    for (auto _ : state)
+    {
         T semaphore(0);
         std::vector<std::thread> threads;
-        static const int number_of_threads = 1000;
-        for (int i = 0; i < number_of_threads; ++i)
+        static const size_t number_of_threads = 1000;
+        for (size_t i = 0; i < number_of_threads; ++i)
         {
             threads.push_back(std::thread([&semaphore]
             {
@@ -86,6 +89,8 @@ static void run_performance_benchmark(benchmark::State& state)
                 semaphore.signal();
             }));
         }
+        while (semaphore.get_number_of_waiting_threads() != number_of_threads)
+            std::this_thread::yield();
         semaphore.signal();
         for (auto &t : threads)
             t.join();
@@ -93,17 +98,19 @@ static void run_performance_benchmark(benchmark::State& state)
 }
 
 OneCondVarSemaphore::OneCondVarSemaphore(size_t resource_count) : now_serving(0), next_ticket(0),
-    resource_count(resource_count) {}
+    number_of_waiting_threads(0), resource_count(resource_count) {}
 
 void OneCondVarSemaphore::wait()
 {
     std::unique_lock<std::mutex> ul(mtx);
     size_t my_ticket = next_ticket;
     ++next_ticket;
+    ++number_of_waiting_threads;
     cond_var.wait(ul, [=]() -> bool
     {
         return (my_ticket == now_serving) && (resource_count > 0);
     });
+    --number_of_waiting_threads;
     --resource_count;
     ++now_serving;
 }
@@ -115,15 +122,24 @@ void OneCondVarSemaphore::signal()
     cond_var.notify_all();
 }
 
-UnfairSemaphore::UnfairSemaphore(size_t resource_count) : resource_count(resource_count) {}
+size_t OneCondVarSemaphore::get_number_of_waiting_threads() const
+{
+    std::unique_lock<std::mutex> ul(mtx);
+    return number_of_waiting_threads;
+}
+
+UnfairSemaphore::UnfairSemaphore(size_t resource_count) : number_of_waiting_threads(0),
+    resource_count(resource_count) {}
 
 void UnfairSemaphore::wait()
 {
     std::unique_lock<std::mutex> ul(mtx);
+    ++number_of_waiting_threads;
     cond_var.wait(ul, [=]() -> bool
     {
         return resource_count > 0;
     });
+    --number_of_waiting_threads;
     --resource_count;
 }
 
@@ -132,6 +148,12 @@ void UnfairSemaphore::signal()
     std::unique_lock<std::mutex> ul(mtx);
     ++resource_count;
     cond_var.notify_all();
+}
+
+size_t UnfairSemaphore::get_number_of_waiting_threads() const
+{
+    std::unique_lock<std::mutex> ul(mtx);
+    return number_of_waiting_threads;
 }
 
 TEST(FairnessCheck, PassesForProposedSemaphore)

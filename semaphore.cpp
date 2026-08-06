@@ -27,3 +27,9 @@ void Semaphore::signal()
     if (!cond_vars.empty())
         cond_vars.front()->notify_one();
 }
+
+size_t Semaphore::get_number_of_waiting_threads() const
+{
+    std::unique_lock<std::mutex> ul(mtx);
+    return cond_vars.size();
+}

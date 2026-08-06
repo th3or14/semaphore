@@ -10,10 +10,11 @@ public:
     explicit Semaphore(size_t resource_count = 1);
     void wait();
     void signal();
+    size_t get_number_of_waiting_threads() const;
 
 private:
     std::queue<std::unique_ptr<std::condition_variable>> cond_vars;
-    std::mutex mtx;
+    mutable std::mutex mtx;
     size_t now_serving;
     size_t next_ticket;
     size_t resource_count;
