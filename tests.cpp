@@ -52,7 +52,7 @@ static bool run_fairness_check()
     T semaphore(0);
     std::vector<std::thread> threads;
     std::vector<size_t> passing_order;
-    static const size_t number_of_threads = 30;
+    static const size_t number_of_threads = 1000;
     for (size_t i = 0; i < number_of_threads; ++i)
     {
         threads.push_back(std::thread([&semaphore, &passing_order, i]
