@@ -15,7 +15,7 @@ namespace {
 class OneCondVarSemaphore
 {
 public:
-    explicit OneCondVarSemaphore(size_t resource_count = 1);
+    explicit OneCondVarSemaphore(size_t resource_count);
     void wait();
     void signal();
     size_t get_number_of_waiting_threads() const;
@@ -32,7 +32,7 @@ private:
 class UnfairSemaphore
 {
 public:
-    explicit UnfairSemaphore(size_t resource_count = 1);
+    explicit UnfairSemaphore(size_t resource_count);
     void wait();
     void signal();
     size_t get_number_of_waiting_threads() const;

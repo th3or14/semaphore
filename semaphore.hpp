@@ -7,7 +7,7 @@
 class Semaphore
 {
 public:
-    explicit Semaphore(size_t resource_count = 1);
+    explicit Semaphore(size_t resource_count);
     void wait();
     void signal();
     size_t get_number_of_waiting_threads() const;
