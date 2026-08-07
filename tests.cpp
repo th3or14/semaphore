@@ -113,6 +113,7 @@ void OneCondVarSemaphore::wait()
     --number_of_waiting_threads;
     --resource_count;
     ++now_serving;
+    cond_var.notify_all();
 }
 
 void OneCondVarSemaphore::signal()

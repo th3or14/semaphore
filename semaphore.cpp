@@ -18,6 +18,8 @@ void Semaphore::wait()
     cond_vars.pop();
     --resource_count;
     ++now_serving;
+    if (!cond_vars.empty())
+        cond_vars.front()->notify_one();
 }
 
 void Semaphore::signal()
