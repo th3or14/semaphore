@@ -1,13 +1,13 @@
-#ifndef SEMAPHORE_HPP
-#define SEMAPHORE_HPP
+#ifndef PROPOSED_SEMAPHORE_HPP
+#define PROPOSED_SEMAPHORE_HPP
 
 #include <future>
 #include <queue>
 
-class Semaphore
+class ProposedSemaphore
 {
 public:
-    explicit Semaphore(size_t resource_count);
+    explicit ProposedSemaphore(size_t resource_count);
     void wait();
     void signal();
     size_t get_number_of_waiting_threads() const;
@@ -20,4 +20,4 @@ private:
     size_t resource_count;
 };
 
-#endif // SEMAPHORE_HPP
+#endif // PROPOSED_SEMAPHORE_HPP

@@ -1,9 +1,9 @@
-#include "semaphore.hpp"
+#include "proposed-semaphore.hpp"
 
-Semaphore::Semaphore(size_t resource_count) : now_serving(0), next_ticket(0),
+ProposedSemaphore::ProposedSemaphore(size_t resource_count) : now_serving(0), next_ticket(0),
     resource_count(resource_count) {}
 
-void Semaphore::wait()
+void ProposedSemaphore::wait()
 {
     std::unique_lock<std::mutex> ul(mtx);
     size_t my_ticket = next_ticket;
@@ -22,7 +22,7 @@ void Semaphore::wait()
         cond_vars.front()->notify_one();
 }
 
-void Semaphore::signal()
+void ProposedSemaphore::signal()
 {
     std::unique_lock<std::mutex> ul(mtx);
     ++resource_count;
@@ -30,7 +30,7 @@ void Semaphore::signal()
         cond_vars.front()->notify_one();
 }
 
-size_t Semaphore::get_number_of_waiting_threads() const
+size_t ProposedSemaphore::get_number_of_waiting_threads() const
 {
     std::unique_lock<std::mutex> ul(mtx);
     return cond_vars.size();

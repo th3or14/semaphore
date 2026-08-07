@@ -1,4 +1,4 @@
-#include "semaphore.hpp"
+#include "proposed-semaphore.hpp"
 
 #include <gtest/gtest.h>
 #include <benchmark/benchmark.h>
@@ -7,8 +7,6 @@
 #include <chrono>
 
 using namespace std::chrono_literals;
-
-using ProposedSemaphore = Semaphore;
 
 namespace {
 
