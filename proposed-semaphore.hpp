@@ -1,7 +1,7 @@
 #ifndef PROPOSED_SEMAPHORE_HPP
 #define PROPOSED_SEMAPHORE_HPP
 
-#include <future>
+#include <condition_variable>
 #include <queue>
 
 class ProposedSemaphore
