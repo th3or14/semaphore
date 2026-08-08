@@ -84,12 +84,12 @@ static void run_performance_benchmark(benchmark::State& state)
             threads.push_back(std::thread([&semaphore]
             {
                 semaphore.wait();
-                semaphore.signal();
             }));
         }
         while (semaphore.get_number_of_waiting_threads() != number_of_threads)
             std::this_thread::yield();
-        semaphore.signal();
+        for (size_t i = 0; i < number_of_threads; ++i)
+            semaphore.signal();
         for (auto &t : threads)
             t.join();
     }
