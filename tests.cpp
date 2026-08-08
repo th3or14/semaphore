@@ -170,9 +170,9 @@ TEST(FairnessCheck, FailsForUnfairSemaphore)
     EXPECT_FALSE(run_fairness_check<UnfairSemaphore>());
 }
 
-BENCHMARK(run_performance_benchmark<ProposedSemaphore>);
-BENCHMARK(run_performance_benchmark<OneCondVarSemaphore>);
-BENCHMARK(run_performance_benchmark<UnfairSemaphore>);
+BENCHMARK(run_performance_benchmark<ProposedSemaphore>)->Unit(benchmark::kMillisecond);
+BENCHMARK(run_performance_benchmark<OneCondVarSemaphore>)->Unit(benchmark::kMillisecond);
+BENCHMARK(run_performance_benchmark<UnfairSemaphore>)->Unit(benchmark::kMillisecond);
 
 TEST(PerformanceBenchmark, RunAllRegisteredBenchmarks)
 {
