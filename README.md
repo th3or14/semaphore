@@ -8,7 +8,7 @@ The proposed semaphore implementation is the class `ProposedSemaphore` defined i
 
 - Fairness guaranteed by the ticket lock algorithm prevents a thread from being starved out of execution for a long time due to inability to pass through a semaphore in favor of other threads.
 
-- A queue of condition variables is used for the sake of waking up one certain thread using `notify_one()` instead of waking up all the threads using `notify_all()` in case of one condition variable. Benchmarks registered performance boost against the implementation based on one condition variable. Thus it looks like using an extra queue is reasonable.
+- A queue of condition variables is used for the sake of waking up one certain thread using `notify_one()` instead of waking up all the threads using `notify_all()` in case of one condition variable. Benchmarks registered performance boost against the implementation based on one condition variable.
 
 - The number of waiting threads is implicitly tracked as the size of the queue of condition variables.
 
