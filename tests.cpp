@@ -42,8 +42,7 @@ private:
 
 } // namespace
 
-template <typename T>
-static bool run_fairness_check() {
+template <typename T> static bool run_fairness_check() {
     T semaphore(0);
     std::vector<std::thread> threads;
     std::vector<size_t> passing_order;
@@ -77,9 +76,7 @@ static void run_performance_benchmark(benchmark::State &state) {
         std::vector<std::thread> threads;
         static const size_t number_of_threads = 100;
         for (size_t i = 0; i < number_of_threads; ++i) {
-            threads.push_back(std::thread([&semaphore] {
-                semaphore.wait();
-            }));
+            threads.push_back(std::thread([&semaphore] { semaphore.wait(); }));
         }
         while (semaphore.get_number_of_waiting_threads() != number_of_threads) {
             std::this_thread::yield();
@@ -94,8 +91,8 @@ static void run_performance_benchmark(benchmark::State &state) {
 }
 
 OneCondVarSemaphore::OneCondVarSemaphore(size_t resource_count)
-    : now_serving(0), next_ticket(0), number_of_waiting_threads(0), resource_count(resource_count) {
-}
+    : now_serving(0), next_ticket(0), number_of_waiting_threads(0),
+      resource_count(resource_count) {}
 
 void OneCondVarSemaphore::wait() {
     std::unique_lock<std::mutex> ul(mtx);
@@ -123,15 +120,12 @@ size_t OneCondVarSemaphore::get_number_of_waiting_threads() const {
 }
 
 UnfairSemaphore::UnfairSemaphore(size_t resource_count)
-    : number_of_waiting_threads(0), resource_count(resource_count) {
-}
+    : number_of_waiting_threads(0), resource_count(resource_count) {}
 
 void UnfairSemaphore::wait() {
     std::unique_lock<std::mutex> ul(mtx);
     ++number_of_waiting_threads;
-    cond_var.wait(ul, [=]() -> bool {
-        return resource_count > 0;
-    });
+    cond_var.wait(ul, [=]() -> bool { return resource_count > 0; });
     --number_of_waiting_threads;
     --resource_count;
 }
@@ -159,9 +153,12 @@ TEST(FairnessCheck, FailsForUnfairSemaphore) {
     EXPECT_FALSE(run_fairness_check<UnfairSemaphore>());
 }
 
-BENCHMARK(run_performance_benchmark<ProposedSemaphore>)->Unit(benchmark::kMillisecond);
-BENCHMARK(run_performance_benchmark<OneCondVarSemaphore>)->Unit(benchmark::kMillisecond);
-BENCHMARK(run_performance_benchmark<UnfairSemaphore>)->Unit(benchmark::kMillisecond);
+BENCHMARK(run_performance_benchmark<ProposedSemaphore>)
+    ->Unit(benchmark::kMillisecond);
+BENCHMARK(run_performance_benchmark<OneCondVarSemaphore>)
+    ->Unit(benchmark::kMillisecond);
+BENCHMARK(run_performance_benchmark<UnfairSemaphore>)
+    ->Unit(benchmark::kMillisecond);
 
 TEST(PerformanceBenchmark, RunAllRegisteredBenchmarks) {
     benchmark::RunSpecifiedBenchmarks();

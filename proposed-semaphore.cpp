@@ -1,8 +1,7 @@
 #include "proposed-semaphore.hpp"
 
 ProposedSemaphore::ProposedSemaphore(size_t resource_count)
-    : now_serving(0), next_ticket(0), resource_count(resource_count) {
-}
+    : now_serving(0), next_ticket(0), resource_count(resource_count) {}
 
 void ProposedSemaphore::wait() {
     std::unique_lock<std::mutex> ul(mtx);
@@ -10,8 +9,9 @@ void ProposedSemaphore::wait() {
     ++next_ticket;
     cond_vars.push(std::make_unique<std::condition_variable>());
     cond_vars.back()->wait(ul, [=]() -> bool {
-        // in spite of condition variables are notified one by one in the right order in the queue,
-        // this predicate is still needed for protecting from spurious wakeups
+        // in spite of condition variables are notified one by one in the right
+        // order in the queue, this predicate is still needed for protecting
+        // from spurious wakeups
         return (my_ticket == now_serving) && (resource_count > 0);
     });
     cond_vars.pop();
