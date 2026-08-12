@@ -4,8 +4,7 @@
 #include <condition_variable>
 #include <queue>
 
-class ProposedSemaphore
-{
+class ProposedSemaphore {
 public:
     explicit ProposedSemaphore(size_t resource_count);
     void wait();
